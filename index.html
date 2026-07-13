@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P File Transfer • WebRTC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: #6366f1;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .section {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .dark .glass {
+            background: rgba(23, 23, 37, 0.95);
+        }
+
+        .file-drop {
+            transition: all 0.2s ease;
+        }
+
+        .file-drop.dragover {
+            background-color: #f0f0ff;
+            border-color: #6366f1;
+        }
+
+        .progress-bar {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .status-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .webrtc-log {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.75rem;
+        }
+
+        .nav-active {
+            background-color: #6366f1;
+            color: white;
+            box-shadow: 0 10px 15px -3px rgb(99 102 241 / 0.2);
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+    <!-- Header -->
+    <header class="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-inner">
+                    <i class="fa-solid fa-exchange-alt text-white text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-display text-2xl font-semibold tracking-tighter">P2P Transfer</h1>
+                    <p class="text-[10px] text-zinc-500 -mt-1">WebRTC • Zero Server Storage</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-x-2 text-sm">
+                <div class="px-3 py-1.5 bg-zinc-900 rounded-3xl flex items-center gap-x-2 text-xs border border-zinc-800">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <span class="text-emerald-400 font-medium">Direct P2P</span>
+                </div>
+                <button onclick="resetApp()" 
+                        class="px-4 py-2 text-xs font-medium flex items-center gap-x-2 hover:bg-zinc-900 transition-colors rounded-3xl border border-zinc-800 hover:border-zinc-700">
+                    <i class="fa-solid fa-redo text-xs"></i>
+                    <span>Reset</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-5xl mx-auto px-6 pt-10 pb-16">
+        
+        <!-- Hero -->
+        <div class="text-center mb-10">
+            <div class="inline-flex items-center gap-x-2 px-4 py-1 bg-zinc-900 border border-zinc-800 rounded-3xl text-xs mb-4">
+                <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                <span class="font-medium">Mã hóa đầu cuối • Không lưu file trên server</span>
+            </div>
+            <h2 class="font-display text-5xl font-semibold tracking-tighter">Truyền file trực tiếp<br>giữa hai thiết bị</h2>
+            <p class="mt-3 text-lg text-zinc-400 max-w-md mx-auto">Không qua trung gian. Tốc độ cao. Hoàn toàn riêng tư.</p>
+        </div>
+
+        <!-- INITIAL SECTION -->
+        <div id="initial-section" class="max-w-xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- Create Room Card -->
+                <div onclick="createRoom()" 
+                     class="group glass border border-zinc-800 hover:border-indigo-500/70 transition-all rounded-3xl p-7 cursor-pointer active:scale-[0.985]">
+                    <div class="flex flex-col h-full">
+                        <div class="w-12 h-12 bg-indigo-600/10 text-indigo-400 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-indigo-600/20 transition-colors">
+                            <i class="fa-solid fa-paper-plane text-3xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-2xl tracking-tight">Tạo Box Gửi File</h3>
+                        <p class="text-zinc-400 mt-2 text-[15px] leading-snug">Tạo phòng mới và chia sẻ link/QR cho thiết bị nhận.</p>
+                        
+                        <div class="mt-auto pt-6">
+                            <div class="inline-flex items-center text-sm font-medium text-indigo-400 group-hover:gap-x-2 transition-all">
+                                Bắt đầu ngay 
+                                <i class="fa-solid fa-arrow-right ml-1.5 transition-transform group-hover:translate-x-0.5"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Join Room Card -->
+                <div class="glass border border-zinc-800 rounded-3xl p-7">
+                    <div class="flex flex-col h-full">
+                        <div class="w-12 h-12 bg-emerald-600/10 text-emerald-400 rounded-2xl flex items-center justify-center mb-5">
+                            <i class="fa-solid fa-download text-3xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-2xl tracking-tight">Nhập ID để Nhận File</h3>
+                        <p class="text-zinc-400 mt-2 text-[15px]">Tham gia phòng đã được tạo để nhận file.</p>
+                        
+                        <div class="mt-5 flex gap-2">
+                            <input id="room-input" 
+                                   type="text" 
+                                   placeholder="ROOM ID (VD: A7K9P2)"
+                                   class="flex-1 bg-zinc-900 border border-zinc-700 focus:border-emerald-500 outline-none px-4 py-3 rounded-2xl text-sm font-mono placeholder:text-zinc-600">
+                            <button onclick="joinRoomFromInput()"
+                                    class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 transition-colors text-white text-sm font-semibold rounded-2xl whitespace-nowrap">
+                                Tham gia
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <p class="text-center text-xs text-zinc-500 mt-6">Mở 2 tab trình duyệt hoặc 2 thiết bị để test. Hoạt động tốt nhất trên cùng mạng LAN/WiFi.</p>
+        </div>
+
+        <!-- WAITING SECTION (Creator) -->
+        <div id="waiting-section" class="hidden max-w-md mx-auto">
+            <div class="glass border border-zinc-800 rounded-3xl p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <div class="text-xs uppercase tracking-[1px] text-zinc-500 font-medium">PHÒNG CỦA BẠN</div>
+                        <div id="room-id-display" class="font-mono text-4xl font-semibold tracking-tighter text-white mt-1"></div>
+                    </div>
+                    <div class="px-3 py-1 bg-amber-500/10 text-amber-400 text-xs font-medium rounded-3xl flex items-center gap-x-2">
+                        <i class="fa-solid fa-clock fa-spin-pulse"></i>
+                        <span>ĐANG CHỜ</span>
+                    </div>
+                </div>
+
+                <!-- Share Link -->
+                <div class="mb-6">
+                    <div class="text-xs text-zinc-400 mb-1.5 font-medium">LINK TRUY CẬP (gửi cho người nhận)</div>
+                    <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-700 rounded-2xl p-1 pr-2">
+                        <div id="share-link" class="flex-1 px-4 text-sm font-mono text-emerald-300 truncate"></div>
+                        <button onclick="copyShareLink()" 
+                                class="px-4 py-2 text-xs bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 rounded-[14px] flex items-center gap-x-2 transition-colors">
+                            <i class="fa-solid fa-copy"></i>
+                            <span class="hidden sm:inline">Copy</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QR Code -->
+                <div class="mb-2">
+                    <div class="text-xs text-zinc-400 mb-2 font-medium">QUÉT MÃ QR ĐỂ THAM GIA</div>
+                    <div id="qr-container" class="bg-white p-4 rounded-2xl inline-block shadow-inner"></div>
+                </div>
+
+                <div class="text-center">
+                    <div class="inline-flex items-center gap-x-2 text-xs px-4 py-2 bg-zinc-900 rounded-3xl border border-zinc-800">
+                        <div class="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></div>
+                        <span class="text-amber-300">Chờ thiết bị kia quét QR hoặc nhập Room ID</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONNECTED SECTION -->
+        <div id="connected-section" class="hidden max-w-lg mx-auto">
+            <div class="glass border border-emerald-900/60 rounded-3xl p-8">
+                
+                <!-- Connection Status -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-x-3">
+                        <div class="w-3 h-3 bg-emerald-400 rounded-full status-dot"></div>
+                        <div>
+                            <div class="font-semibold text-emerald-400">Đã kết nối thành công</div>
+                            <div class="text-xs text-zinc-400">Kênh dữ liệu P2P đang hoạt động</div>
+                        </div>
+                    </div>
+                    <div onclick="disconnect()" 
+                         class="cursor-pointer text-xs px-3 py-1.5 hover:bg-red-950/60 text-red-400 hover:text-red-300 transition-colors rounded-2xl flex items-center gap-x-1 border border-red-900/50">
+                        <i class="fa-solid fa-plug-circle-xmark"></i>
+                        <span class="text-xs">Ngắt kết nối</span>
+                    </div>
+                </div>
+
+                <!-- File Transfer Area -->
+                <div class="border border-zinc-700 rounded-2xl p-5 bg-zinc-900/70">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="font-medium">Gửi file cho thiết bị kia</div>
+                        <div class="text-[10px] px-2.5 py-px bg-zinc-800 rounded text-zinc-400">P2P • Mã hóa</div>
+                    </div>
+                    
+                    <!-- File Input -->
+                    <label class="file-drop border-2 border-dashed border-zinc-700 hover:border-indigo-500/60 transition-colors rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer group">
+                        <input type="file" id="file-input" class="hidden" onchange="handleFileSelect(event)">
+                        <div class="w-11 h-11 bg-zinc-800 group-hover:bg-indigo-600/10 transition-colors rounded-2xl flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-file-upload text-3xl text-zinc-400 group-hover:text-indigo-400 transition-colors"></i>
+                        </div>
+                        <div class="text-center">
+                            <div class="font-medium text-sm">Chọn file hoặc kéo thả vào đây</div>
+                            <div class="text-xs text-zinc-500 mt-0.5">Hỗ trợ mọi loại file • Tối đa ~2GB (browser limit)</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Transfer Progress -->
+                <div id="transfer-status" class="hidden mt-5 border border-zinc-700 bg-zinc-900/70 rounded-2xl p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-x-2">
+                            <i id="transfer-icon" class="fa-solid fa-upload text-indigo-400"></i>
+                            <div>
+                                <div id="transfer-filename" class="font-medium text-sm truncate max-w-[220px]"></div>
+                                <div id="transfer-subtitle" class="text-xs text-zinc-400">Đang chuẩn bị...</div>
+                            </div>
+                        </div>
+                        <div id="transfer-percent" class="font-mono text-sm font-semibold tabular-nums text-indigo-400">0%</div>
+                    </div>
+                    
+                    <div class="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                        <div id="progress-bar" 
+                             class="progress-bar h-2 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full w-0"
+                             style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="flex justify-between text-[10px] text-zinc-500 mt-1.5 font-mono">
+                        <div id="transfer-size">0 / 0 MB</div>
+                        <div onclick="cancelTransfer()" class="cursor-pointer hover:text-red-400 transition-colors">Hủy</div>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <div class="text-[10px] text-zinc-500">File được truyền trực tiếp qua WebRTC DataChannel • Không đi qua server</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status / Logs -->
+        <div id="status-bar" class="max-w-lg mx-auto mt-4 text-center text-xs text-zinc-500 min-h-[20px]"></div>
+        
+    </div>
+
+    <footer class="text-center text-xs text-zinc-600 pb-8">
+        Built with FastAPI + WebRTC • Pure P2P file transfer
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
