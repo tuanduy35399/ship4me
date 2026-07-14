@@ -199,7 +199,7 @@ class ConnectionManager:
         )
         return True
 
-    def disconnect(self, websocket: WebSocket, room_id: str):
+    async def disconnect(self, websocket: WebSocket, room_id: str):
         """Remove client from room. Clean up empty rooms."""
         if room_id in self.rooms and websocket in self.rooms[room_id]:
             self.rooms[room_id].remove(websocket)
@@ -259,11 +259,15 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected from room {room_id}")
-        manager.disconnect(websocket, room_id)
+        await manager.disconnect(websocket, room_id)
     except Exception as e:
         logger.error(f"Unexpected error in WS {room_id}: {e}")
-        manager.disconnect(websocket, room_id)
+        await manager.disconnect(websocket, room_id)
 
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
 
 if __name__ == "__main__":
     import uvicorn
