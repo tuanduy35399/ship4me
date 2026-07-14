@@ -116,7 +116,7 @@
                         <div class="w-12 h-12 bg-indigo-600/10 text-indigo-400 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-indigo-600/20 transition-colors">
                             <i class="fa-solid fa-paper-plane text-3xl"></i>
                         </div>
-                        <h3 class="font-semibold text-2xl tracking-tight">Tạo Box Gửi File</h3>
+                        <h3 class="font-semibold text-2xl tracking-tight text-black hover:text-blue-600 transition-colors">Tạo Box Gửi File</h3>
                         <p class="text-zinc-400 mt-2 text-[15px] leading-snug">Tạo phòng mới và chia sẻ link/QR cho thiết bị nhận.</p>
                         
                         <div class="mt-auto pt-6">
@@ -129,24 +129,26 @@
                 </div>
 
                 <!-- Join Room Card -->
-                <div class="glass border border-zinc-800 rounded-3xl p-7">
+                <div class="glass border border-zinc-800 rounded-3xl p-5">
                     <div class="flex flex-col h-full">
                         <div class="w-12 h-12 bg-emerald-600/10 text-emerald-400 rounded-2xl flex items-center justify-center mb-5">
                             <i class="fa-solid fa-download text-3xl"></i>
                         </div>
-                        <h3 class="font-semibold text-2xl tracking-tight">Nhập ID để Nhận File</h3>
+                        <!-- <h3 class="font-semibold text-2xl tracking-tight text-black">Nhập ID để Nhận File</h3> -->
+                        <h3 class="font-semibold text-2xl tracking-tight text-black hover:text-blue-600 transition-colors">Nhập ID để Nhận File</h3>
                         <p class="text-zinc-400 mt-2 text-[15px]">Tham gia phòng đã được tạo để nhận file.</p>
                         
-                        <div class="mt-5 flex gap-2">
+                        <div class="mt-5 flex gap-2 w-full">
                             <input id="room-input" 
                                    type="text" 
-                                   placeholder="ROOM ID (VD: A7K9P2)"
-                                   class="flex-1 bg-zinc-900 border border-zinc-700 focus:border-emerald-500 outline-none px-4 py-3 rounded-2xl text-sm font-mono placeholder:text-zinc-600">
+                                   placeholder="A7K9P2"
+                                   class="flex-1 min-w-0 bg-zinc-900 border border-zinc-700 focus:border-emerald-500 outline-none px-4 py-3 rounded-2xl text-sm font-mono placeholder:text-zinc-600">
                             <button onclick="joinRoomFromInput()"
                                     class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 transition-colors text-white text-sm font-semibold rounded-2xl whitespace-nowrap">
                                 Tham gia
                             </button>
                         </div>
+                        
                     </div>
                 </div>
             </div>
